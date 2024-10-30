@@ -9,20 +9,10 @@ namespace OctavianOrg.BloomTests
         [TestMethod]
         [DeploymentItem("data1.txt")]
         [DeploymentItem("data2.txt")]
-        public void TestBasicHashProviderNoValuesArray()
+        public void TestBasicHashProvider()
         {
             BloomFilterParameters bloomFilterParameters = new BloomFilterParameters(320344, 0.02);
-            BloomFilter bloomFilter = new BloomFilter(bloomFilterParameters, new BasicHashProvider(bloomFilterParameters));
-            BloomTestRun(bloomFilter, true, null);
-        }
-
-        [TestMethod]
-        [DeploymentItem("data1.txt")]
-        [DeploymentItem("data2.txt")]
-        public void TestBasicHashProviderWithValuesArray()
-        {
-            BloomFilterParameters bloomFilterParameters = new BloomFilterParameters(320344, 0.02);
-            BloomFilter bloomFilter = new BloomFilter(bloomFilterParameters, new BasicHashProvider(bloomFilterParameters));
+            BasicBloomFilter bloomFilter = new BasicBloomFilter(bloomFilterParameters, new BasicHashProvider(bloomFilterParameters));
             long[] hashValues = new long[bloomFilterParameters.HashFunctionCount];
             BloomTestRun(bloomFilter, true, hashValues);
         }
@@ -30,20 +20,10 @@ namespace OctavianOrg.BloomTests
         [TestMethod]
         [DeploymentItem("data1.txt")]
         [DeploymentItem("data2.txt")]
-        public void TestDoubleHashProviderNoValuesArray()
+        public void TestDoubleHashProvider()
         {
             BloomFilterParameters bloomFilterParameters = new BloomFilterParameters(320344, 0.02);
-            BloomFilter bloomFilter = new BloomFilter(bloomFilterParameters, new DoubleHashProvider(bloomFilterParameters));
-            BloomTestRun(bloomFilter, true, null);
-        }
-
-        [TestMethod]
-        [DeploymentItem("data1.txt")]
-        [DeploymentItem("data2.txt")]
-        public void TestDoubleHashProviderWithValuesArray()
-        {
-            BloomFilterParameters bloomFilterParameters = new BloomFilterParameters(320344, 0.02);
-            BloomFilter bloomFilter = new BloomFilter(bloomFilterParameters, new DoubleHashProvider(bloomFilterParameters));
+            BasicBloomFilter bloomFilter = new BasicBloomFilter(bloomFilterParameters, new DoubleHashProvider(bloomFilterParameters));
             long[] hashValues = new long[bloomFilterParameters.HashFunctionCount];
             BloomTestRun(bloomFilter, true, hashValues);
         }
@@ -51,20 +31,10 @@ namespace OctavianOrg.BloomTests
         [TestMethod]
         [DeploymentItem("data1.txt")]
         [DeploymentItem("data2.txt")]
-        public void TestBasicHashProviderAddAsBytesNoValuesArray()
+        public void TestBasicHashProviderAddAsBytes()
         {
             BloomFilterParameters bloomFilterParameters = new BloomFilterParameters(320344, 0.02);
-            BloomFilter bloomFilter = new BloomFilter(bloomFilterParameters, new BasicHashProvider(bloomFilterParameters));
-            BloomTestRun(bloomFilter, false, null);
-        }
-
-        [TestMethod]
-        [DeploymentItem("data1.txt")]
-        [DeploymentItem("data2.txt")]
-        public void TestBasicHashProviderAddAsBytesWithValuesArray()
-        {
-            BloomFilterParameters bloomFilterParameters = new BloomFilterParameters(320344, 0.02);
-            BloomFilter bloomFilter = new BloomFilter(bloomFilterParameters, new BasicHashProvider(bloomFilterParameters));
+            BasicBloomFilter bloomFilter = new BasicBloomFilter(bloomFilterParameters, new BasicHashProvider(bloomFilterParameters));
             long[] hashValues = new long[bloomFilterParameters.HashFunctionCount];
             BloomTestRun(bloomFilter, false, hashValues);
         }
@@ -72,22 +42,22 @@ namespace OctavianOrg.BloomTests
         [TestMethod]
         [DeploymentItem("data1.txt")]
         [DeploymentItem("data2.txt")]
-        public void TestDoubleHashProviderAddAsBytesNoValuesArray()
+        public void TestDoubleHashProviderAddAsBytes()
         {
             BloomFilterParameters bloomFilterParameters = new BloomFilterParameters(320344, 0.02);
-            BloomFilter bloomFilter = new BloomFilter(bloomFilterParameters, new DoubleHashProvider(bloomFilterParameters));
-            BloomTestRun(bloomFilter, false, null);
+            BasicBloomFilter bloomFilter = new BasicBloomFilter(bloomFilterParameters, new DoubleHashProvider(bloomFilterParameters));
+            long[] hashValues = new long[bloomFilterParameters.HashFunctionCount];
+            BloomTestRun(bloomFilter, false, hashValues);
         }
 
         [TestMethod]
         [DeploymentItem("data1.txt")]
         [DeploymentItem("data2.txt")]
-        public void TestDoubleHashProviderAddAsBytesWithValuesArray()
+        public void TestConcurrentBloomFilter()
         {
             BloomFilterParameters bloomFilterParameters = new BloomFilterParameters(320344, 0.02);
-            BloomFilter bloomFilter = new BloomFilter(bloomFilterParameters, new DoubleHashProvider(bloomFilterParameters));
-            long[] hashValues = new long[bloomFilterParameters.HashFunctionCount];
-            BloomTestRun(bloomFilter, false, hashValues);
+            ConcurrentBloomFilter bloomFilter = new ConcurrentBloomFilter(bloomFilterParameters, new DoubleHashProvider(bloomFilterParameters), -1);
+            ConcurrentBloomTestRun(bloomFilter, true);
         }
 
         [TestMethod]
@@ -101,7 +71,7 @@ namespace OctavianOrg.BloomTests
             DynamicBloomTestRun(bloomFilter);
         }
 
-        private void BloomTestRun(BloomFilter bloomFilter, bool addAsString, long[]? hashValues)
+        private void BloomTestRun(BloomFilter bloomFilter, bool addAsString, long[] hashValues)
         {
             using (StreamReader reader = new StreamReader("data1.txt"))
             {
@@ -111,27 +81,12 @@ namespace OctavianOrg.BloomTests
                 {
                     if (addAsString)
                     {
-                        if (hashValues == null)
-                        {
-                            bloomFilter.Add(line);
-                        }
-                        else
-                        {
-                            bloomFilter.Add(line, hashValues);
-                        }
+                        bloomFilter.Add(line, hashValues);
                     }
                     else
                     {
                         byte[] bytes = Encoding.UTF8.GetBytes(line);
-
-                        if (hashValues == null)
-                        {
-                            bloomFilter.Add(bytes);
-                        }
-                        else
-                        {
-                            bloomFilter.Add(bytes, hashValues);
-                        }
+                        bloomFilter.Add(bytes, hashValues);
                     }
                 }
             }
@@ -144,12 +99,12 @@ namespace OctavianOrg.BloomTests
                 {
                     if (addAsString)
                     {
-                        Assert.IsTrue(bloomFilter.Contains(line));
+                        Assert.IsTrue(bloomFilter.Contains(line, hashValues));
                     }
                     else
                     {
                         byte[] bytes = Encoding.UTF8.GetBytes(line);
-                        Assert.IsTrue(bloomFilter.Contains(bytes));
+                        Assert.IsTrue(bloomFilter.Contains(bytes, hashValues));
                     }
                 }
             }
@@ -167,7 +122,7 @@ namespace OctavianOrg.BloomTests
 
                     if (addAsString)
                     {
-                        if (bloomFilter.Contains(line))
+                        if (bloomFilter.Contains(line, hashValues))
                         {
                             ++fpCount;
                         }
@@ -176,7 +131,135 @@ namespace OctavianOrg.BloomTests
                     {
                         byte[] bytes = Encoding.UTF8.GetBytes(line);
 
-                        if (bloomFilter.Contains(bytes))
+                        if (bloomFilter.Contains(bytes, hashValues))
+                        {
+                            ++fpCount;
+                        }
+                    }
+                }
+            }
+
+            double fpRate = ((double)fpCount / totalCount) * 100;
+            Console.WriteLine(bloomFilter.FalsePositiveRate);
+            Console.WriteLine(fpRate);
+            Assert.IsTrue(fpRate < 2.2);
+        }
+
+        private void ConcurrentBloomTestRun(BloomFilter bloomFilter, bool addAsString)
+        {
+            Task task1 = Task.Run(() =>
+            {
+                long[] hashValues = new long[bloomFilter.Parameters.HashFunctionCount];
+
+                using (StreamReader reader = new StreamReader("data1.txt"))
+                {
+                    string? line;
+
+                    while ((line = reader.ReadLine()) != null)
+                    {
+                        if (addAsString)
+                        {
+                            bloomFilter.Add(line, hashValues);
+                        }
+                        else
+                        {
+                            byte[] bytes = Encoding.UTF8.GetBytes(line);
+                            bloomFilter.Add(bytes, hashValues);
+                        }
+                    }
+                }
+            });
+
+            Task task2 = Task.Run(() =>
+            {
+                long[] hashValues = new long[bloomFilter.Parameters.HashFunctionCount];
+
+                using (StreamReader reader = new StreamReader("data1.txt"))
+                {
+                    string? line;
+
+                    while ((line = reader.ReadLine()) != null)
+                    {
+                        if (addAsString)
+                        {
+                            bloomFilter.Add(line, hashValues);
+                        }
+                        else
+                        {
+                            byte[] bytes = Encoding.UTF8.GetBytes(line);
+                            bloomFilter.Add(bytes, hashValues);
+                        }
+                    }
+                }
+            });
+
+            Task task3 = Task.Run(() =>
+            {
+                long[] hashValues = new long[bloomFilter.Parameters.HashFunctionCount];
+
+                using (StreamReader reader = new StreamReader("data1.txt"))
+                {
+                    string? line;
+
+                    while ((line = reader.ReadLine()) != null)
+                    {
+                        if (addAsString)
+                        {
+                            bool discard = bloomFilter.Contains(line, hashValues);
+                        }
+                        else
+                        {
+                            byte[] bytes = Encoding.UTF8.GetBytes(line);
+                            bool discard = bloomFilter.Contains(bytes, hashValues);
+                        }
+                    }
+                }
+            });
+
+            Task.WhenAll(task1, task2, task3).Wait();
+            long[] hashValues = new long[bloomFilter.Parameters.HashFunctionCount];
+
+            using (StreamReader reader = new StreamReader("data1.txt"))
+            {
+                string? line;
+
+                while ((line = reader.ReadLine()) != null)
+                {
+                    if (addAsString)
+                    {
+                        Assert.IsTrue(bloomFilter.Contains(line, hashValues));
+                    }
+                    else
+                    {
+                        byte[] bytes = Encoding.UTF8.GetBytes(line);
+                        Assert.IsTrue(bloomFilter.Contains(bytes, hashValues));
+                    }
+                }
+            }
+
+            int totalCount = 0;
+            int fpCount = 0;
+
+            using (StreamReader reader = new StreamReader("data2.txt"))
+            {
+                string? line;
+
+                while ((line = reader.ReadLine()) != null)
+                {
+                    ++totalCount;
+
+                    if (addAsString)
+                    {
+                        if (bloomFilter.Contains(line, hashValues))
+                        {
+                            ++fpCount;
+                        }
+                    }
+                    else
+                    {
+                        byte[] bytes = Encoding.UTF8.GetBytes(line);
+
+                        if (bloomFilter.Contains(bytes, hashValues))
                         {
                             ++fpCount;
                         }
