@@ -38,9 +38,46 @@ namespace OctavianOrg.Bloom
         /// </param>
         /// <returns>True if at least one bit was changed during addition, false otherwise.</returns>
         public abstract bool Add(long[] hashValues);
+
+        /// <summary>
+        /// Returns whether the supplied item is contained in the filter, which may be a false positive. False positives
+        /// occur when two distinct items has to the same bit positions.
+        /// </summary>
+        /// <param name="item">
+        /// The item to check.
+        /// </param>
+        /// <param name="hashValues">
+        /// Array for storing function hashes. Must have a length at least equal to <see cref="BloomFilterParameters.HashFunctionCount"/>.
+        /// </param>
+        /// <returns>True if bits were set for item, false otherwise.</returns>
         public abstract bool Contains(string item, long[] hashValues);
+
+        /// <summary>
+        /// Returns whether the supplied item is contained in the filter, which may be a false positive. False positives
+        /// occur when two distinct items has to the same bit positions.
+        /// </summary>
+        /// <param name="item">
+        /// The item to check.
+        /// </param>
+        /// <param name="hashValues">
+        /// Array for storing function hashes. Must have a length at least equal to <see cref="BloomFilterParameters.HashFunctionCount"/>.
+        /// </param>
+        /// <returns>True if bits were set for item, false otherwise.</returns>
         public abstract bool Contains(byte[] item, long[] hashValues);
+
+        /// <summary>
+        /// Returns whether the supplied item is contained in the filter, which may be a false positive. False positives
+        /// occur when two distinct items has to the same bit positions.
+        /// </summary>
+        /// <param name="hashValues">
+        /// The hash values to check. Must not be null. The number of hashes must be equal to <see cref="BloomFilterParameters.HashFunctionCount"/>.
+        /// </param>
+        /// <returns>True if bits were set for item, false otherwise.</returns>
         public abstract bool Contains(long[] hashValues);
+
+        /// <summary>
+        /// Gets the BloomFilterParameters supplied to the constructor.
+        /// </summary>
         public abstract BloomFilterParameters Parameters { get; protected set; }
 
         /// <summary>
