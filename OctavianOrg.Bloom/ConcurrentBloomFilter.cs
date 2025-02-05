@@ -36,8 +36,10 @@ namespace OctavianOrg.Bloom
 
         public int ConcurrencyLevel { get; private set; }
 
-        protected override void AddInternal(long[] hashValues)
+        protected override bool AddInternal(long[] hashValues)
         {
+            bool collision = true;
+
             for (int i = 0; i < Parameters.HashFunctionCount; ++i)
             {
                 long bitIndex = hashValues[i] % Parameters.BitsPerHashFunction;
@@ -45,11 +47,18 @@ namespace OctavianOrg.Bloom
 
                 lock (chunkLock)
                 {
-                    _bitSets[i].Set(bitIndex);
+                    if (_bitSets[i].Set(bitIndex))
+                        collision = false;
                 }
             }
 
-            Interlocked.Increment(ref _count);
+            if (collision == false)
+            {
+                Interlocked.Increment(ref _count);
+                return true;
+            }
+            else
+                return false;
         }
 
         protected override bool ContainsInternal(long[] hashValues)

@@ -42,20 +42,25 @@ namespace OctavianOrg.Bloom
         {
             long[] hashValues = new long[Parameters.HashFunctionCount];
             hashValues = _hash.Hash(item, hashValues);
+            bool collision = true;
 
             for (int i = 0; i < Parameters.HashFunctionCount; ++i)
             {
-                _currentBitSet[i].Set(hashValues[i] % Parameters.BitsPerHashFunction);
+                if (_currentBitSet[i].Set(hashValues[i] % Parameters.BitsPerHashFunction))
+                    collision = false;
             }
 
-            ++_currentCount;
-
-            if (_currentCount >= Parameters.MaxElementCount)
+            if (collision == false)
             {
-                CreateNewBitSet();
-            }
+                ++_currentCount;
 
-            ++Count;
+                if (_currentCount >= Parameters.MaxElementCount)
+                {
+                    CreateNewBitSet();
+                }
+
+                ++Count;
+            }
         }
 
         public bool Contains(string item)
@@ -70,19 +75,13 @@ namespace OctavianOrg.Bloom
                 for (int j = 0; j < Parameters.HashFunctionCount; ++j)
                 {
                     if (_bitSets[i][j].IsSet(hashValues[j] % Parameters.BitsPerHashFunction))
-                    {
                         ++matchCount;
-                    }
                     else
-                    {
                         break;
-                    }
                 }
 
                 if (matchCount == Parameters.HashFunctionCount)
-                {
                     return true;
-                }
             }
 
             return false;
@@ -93,9 +92,7 @@ namespace OctavianOrg.Bloom
             _currentBitSet = new BitSet[Parameters.HashFunctionCount];
 
             for (int i = 0; i < Parameters.HashFunctionCount; ++i)
-            {
                 _currentBitSet[i] = new BitSet(Parameters.BitsPerHashFunction);
-            }
 
             _bitSets.Add(_currentBitSet);
             _currentCount = 0;

@@ -4,12 +4,6 @@ namespace OctavianOrg.Bloom
 {
     public class BloomFilterParameters
     {
-        /*
-         * n = ceil(m / (-k / log(1 - exp(log(p) / k))))
-           p = pow(1 - exp(-k / (m / n)), k)
-           m = ceil((n * log(p)) / log(1 / pow(2, log(2))));
-           k = round((m / n) * log(2));
-         */
         public BloomFilterParameters(long maxElementCount, double falsePositiveRate)
         {
             this.MaxElementCount = maxElementCount;
