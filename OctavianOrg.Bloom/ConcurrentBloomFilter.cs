@@ -61,7 +61,7 @@ namespace OctavianOrg.Bloom
             for (int i = 0; i < Parameters.HashFunctionCount; ++i)
             {
                 long bitIndex = hashValues[i] % Parameters.BitsPerHashFunction;
-                object chunkLock = _locks[i, bitIndex % ConcurrencyLevel];
+                object chunkLock = _locks[i, (bitIndex >> 6) % ConcurrencyLevel];
 
                 lock (chunkLock)
                 {
@@ -84,7 +84,7 @@ namespace OctavianOrg.Bloom
             for (int i = 0; i < Parameters.HashFunctionCount; ++i)
             {
                 long bitIndex = hashValues[i] % Parameters.BitsPerHashFunction;
-                object chunkLock = _locks[i, bitIndex % ConcurrencyLevel];
+                object chunkLock = _locks[i, (bitIndex >> 6) % ConcurrencyLevel];
 
                 lock (chunkLock)
                 {
@@ -96,6 +96,12 @@ namespace OctavianOrg.Bloom
             }
 
             return true;
+        }
+
+        /// <inheritdoc/>
+        public override long Count
+        {
+            get { return Interlocked.Read(ref _count); }
         }
     }
 }
