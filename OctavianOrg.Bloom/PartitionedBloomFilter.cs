@@ -3,11 +3,12 @@
 namespace OctavianOrg.Bloom
 {
     /// <summary>
-    /// Implementation of an append-only bloom filter.
+    /// Implementation of an append-only partitioned bloom filter. See "A Case for Partitioned Bloom Filters" by Paulo Sérgio Almeida et al. for details.
+    /// https://arxiv.org/abs/2009.11789
     /// </summary>
-    public class BasicBloomFilter : BloomFilter
+    public class PartitionedBloomFilter : BloomFilter 
     {
-        protected BitSet[] _bitSets;
+        protected IBitSet[] _bitSets;
         protected HashProvider _hash;
         protected long _count;
 
@@ -20,7 +21,7 @@ namespace OctavianOrg.Bloom
         /// <param name="hashProvider">
         /// HashProvider implementation for mapping keys to bit positions. Must not be null.
         /// </param>
-        public BasicBloomFilter(BloomFilterParameters parameters, HashProvider hashProvider)
+        public PartitionedBloomFilter(BloomFilterParameters parameters, HashProvider hashProvider)
         {
             if (parameters == null) throw new ArgumentNullException("parameters");
 
@@ -28,14 +29,23 @@ namespace OctavianOrg.Bloom
 
             Parameters = parameters;
             _hash = hashProvider;
-            _bitSets = new BitSet[Parameters.HashFunctionCount];
-
-            for (int i = 0; i < Parameters.HashFunctionCount; ++i)
-            {
-                _bitSets[i] = new BitSet(Parameters.BitsPerHashFunction);
-            }
-
             _count = 0;
+            _bitSets = new BitSet[parameters.HashFunctionCount];
+
+            for (int i = 0; i < parameters.HashFunctionCount; ++i)
+                _bitSets[i] = new BitSet(parameters.BitsPerHashFunction);
+        }
+
+        protected PartitionedBloomFilter(BloomFilterParameters parameters, HashProvider hashProvider, IBitSet[] bitSets)
+        {
+            if (parameters == null) throw new ArgumentNullException("parameters");
+
+            if (hashProvider == null) throw new ArgumentNullException("hashProvider");
+
+            Parameters = parameters;
+            _hash = hashProvider;
+            _count = 0;
+            _bitSets = bitSets;
         }
 
         /// <summary>
@@ -51,7 +61,7 @@ namespace OctavianOrg.Bloom
         {
             get
             {
-                return Math.Pow(1.0 - Math.Pow(1.0 / Math.E, (double)Count * Parameters.HashFunctionCount / Parameters.TotalBits), Parameters.HashFunctionCount);
+                return Math.Pow(1.0 - Math.Pow(1.0 - ((double)Parameters.HashFunctionCount / Parameters.TotalBits), Count), Parameters.HashFunctionCount);
             }
         }
 
@@ -89,7 +99,7 @@ namespace OctavianOrg.Bloom
 
             for (int i = 0; i < Parameters.HashFunctionCount; ++i)
             {
-                if (_bitSets[i].Set(hashValues[i] % Parameters.BitsPerHashFunction))
+                if (_bitSets[i].Set(hashValues[i]))
                     collision = false;
             }
 
@@ -123,10 +133,8 @@ namespace OctavianOrg.Bloom
         {
             for (int i = 0; i < Parameters.HashFunctionCount; ++i)
             {
-                if (_bitSets[i].IsSet(hashValues[i] % Parameters.BitsPerHashFunction) == false)
-                {
+                if (_bitSets[i].IsSet(hashValues[i]) == false)
                     return false;
-                }
             }
 
             return true;

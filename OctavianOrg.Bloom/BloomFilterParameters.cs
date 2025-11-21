@@ -10,7 +10,7 @@ namespace OctavianOrg.Bloom
             this.FalsePositiveRate = falsePositiveRate;
             double bitCount = Math.Ceiling((-Math.Log(this.FalsePositiveRate) * this.MaxElementCount) / (Math.Pow(Math.Log(2), 2)));
             this.HashFunctionCount = (int)((bitCount * Math.Log(2)) / this.MaxElementCount);
-            this.BitsPerHashFunction = (long)(bitCount / this.HashFunctionCount);
+            this.BitsPerHashFunction = (long)Math.Ceiling(bitCount / this.HashFunctionCount) | 1L;
             this.TotalBits = this.BitsPerHashFunction * this.HashFunctionCount;
         }
 
