@@ -5,10 +5,8 @@ using System.Threading;
 
 namespace OctavianOrg.Bloom
 {
-    public class ConcurrentBloomFilter : BasicBloomFilter
+    public class ConcurrentBloomFilter : PartitionedBloomFilter
     {
-        private object[,] _locks;
-
         /// <summary>
         /// Creates a concurrent append-only BloomFilter.
         /// </summary>
@@ -24,7 +22,7 @@ namespace OctavianOrg.Bloom
         /// <exception cref="ArgumentOutOfRangeException">
         /// Thrown if concurrencyLevel is <= 0 and not -1.
         /// </exception>
-        public ConcurrentBloomFilter(BloomFilterParameters parameters, HashProvider hashProvider, int concurrencyLevel) : base(parameters, hashProvider)
+        public ConcurrentBloomFilter(BloomFilterParameters parameters, HashProvider hashProvider, int concurrencyLevel) : base(parameters, hashProvider, null)
         {
             if (concurrencyLevel <= 0)
             {
@@ -37,16 +35,10 @@ namespace OctavianOrg.Bloom
             }
 
             ConcurrencyLevel = concurrencyLevel;
+            _bitSets = new ConcurrentBitSet[parameters.HashFunctionCount];
 
-            _locks = new object[Parameters.HashFunctionCount, concurrencyLevel];
-            
-            for (int i = 0; i < _locks.GetLength(0); ++i)
-            {
-                for (int j = 0; j < _locks.GetLength(1); ++j)
-                {
-                    _locks[i, j] = new object();
-                }
-            }
+            for (int i = 0; i < parameters.HashFunctionCount; ++i)
+                _bitSets[i] = new ConcurrentBitSet(parameters.BitsPerHashFunction, concurrencyLevel);
         }
 
         /// <summary>
@@ -61,13 +53,9 @@ namespace OctavianOrg.Bloom
             for (int i = 0; i < Parameters.HashFunctionCount; ++i)
             {
                 long bitIndex = hashValues[i] % Parameters.BitsPerHashFunction;
-                object chunkLock = _locks[i, (bitIndex >> 6) % ConcurrencyLevel];
 
-                lock (chunkLock)
-                {
-                    if (_bitSets[i].Set(bitIndex))
-                        collision = false;
-                }
+                if (_bitSets[i].Set(bitIndex))
+                    collision = false;
             }
 
             if (collision == false)
@@ -79,26 +67,28 @@ namespace OctavianOrg.Bloom
                 return false;
         }
 
+
+        /// <inheritdoc/>
         protected override bool ContainsInternal(long[] hashValues)
         {
             for (int i = 0; i < Parameters.HashFunctionCount; ++i)
             {
                 long bitIndex = hashValues[i] % Parameters.BitsPerHashFunction;
-                object chunkLock = _locks[i, (bitIndex >> 6) % ConcurrencyLevel];
 
-                lock (chunkLock)
-                {
-                    if (_bitSets[i].IsSet(bitIndex) == false)
-                    {
-                        return false;
-                    }
-                }
+                if (_bitSets[i].IsSet(bitIndex) == false)
+                    return false;
             }
 
             return true;
         }
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Returns the count if items in the filter. Note that this value is a bit fuzzy - if we add a value
+        /// to the filter but it sets bits that are already set (a collision) then that doesn't really count
+        /// since it doesn't impact the true false positive rate. This implementation only increments the item
+        /// count if at least one bit is changed from 0 to 1 during addition. Also note that the count can be
+        /// very misleading in a concurrent scenario where multiple bit set operations are interleaved.
+        /// </summary>
         public override long Count
         {
             get { return Interlocked.Read(ref _count); }

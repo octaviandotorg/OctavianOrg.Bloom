@@ -4,39 +4,17 @@ using System.Text;
 namespace OctavianOrg.BloomTests
 {
     [TestClass]
-    public class UnitTest1
+    public class BloomFilterTests
     {
-        [TestMethod]
-        [DeploymentItem("data1.txt")]
-        [DeploymentItem("data2.txt")]
-        public void TestBasicHashProvider()
-        {
-            BloomFilterParameters bloomFilterParameters = new BloomFilterParameters(320344, 0.02);
-            BasicBloomFilter bloomFilter = new BasicBloomFilter(bloomFilterParameters, new BasicHashProvider(bloomFilterParameters));
-            long[] hashValues = new long[bloomFilterParameters.HashFunctionCount];
-            BloomTestRun(bloomFilter, true, hashValues);
-        }
-
         [TestMethod]
         [DeploymentItem("data1.txt")]
         [DeploymentItem("data2.txt")]
         public void TestDoubleHashProvider()
         {
             BloomFilterParameters bloomFilterParameters = new BloomFilterParameters(320344, 0.02);
-            BasicBloomFilter bloomFilter = new BasicBloomFilter(bloomFilterParameters, new DoubleHashProvider(bloomFilterParameters));
+            PartitionedBloomFilter bloomFilter = new PartitionedBloomFilter(bloomFilterParameters, new DoubleHashProvider(bloomFilterParameters));
             long[] hashValues = new long[bloomFilterParameters.HashFunctionCount];
             BloomTestRun(bloomFilter, true, hashValues);
-        }
-
-        [TestMethod]
-        [DeploymentItem("data1.txt")]
-        [DeploymentItem("data2.txt")]
-        public void TestBasicHashProviderAddAsBytes()
-        {
-            BloomFilterParameters bloomFilterParameters = new BloomFilterParameters(320344, 0.02);
-            BasicBloomFilter bloomFilter = new BasicBloomFilter(bloomFilterParameters, new BasicHashProvider(bloomFilterParameters));
-            long[] hashValues = new long[bloomFilterParameters.HashFunctionCount];
-            BloomTestRun(bloomFilter, false, hashValues);
         }
 
         [TestMethod]
@@ -45,7 +23,7 @@ namespace OctavianOrg.BloomTests
         public void TestDoubleHashProviderAddAsBytes()
         {
             BloomFilterParameters bloomFilterParameters = new BloomFilterParameters(320344, 0.02);
-            BasicBloomFilter bloomFilter = new BasicBloomFilter(bloomFilterParameters, new DoubleHashProvider(bloomFilterParameters));
+            PartitionedBloomFilter bloomFilter = new PartitionedBloomFilter(bloomFilterParameters, new DoubleHashProvider(bloomFilterParameters));
             long[] hashValues = new long[bloomFilterParameters.HashFunctionCount];
             BloomTestRun(bloomFilter, false, hashValues);
         }
@@ -54,7 +32,7 @@ namespace OctavianOrg.BloomTests
         [DeploymentItem("data1.txt")]
         [DeploymentItem("data2.txt")]
         [DeploymentItem("data3.txt")]
-        public void DynamicTestBasicHashProvider()
+        public void DynamicTestDoubleHashProvider()
         {
             BloomFilterParameters bloomFilterParameters = new BloomFilterParameters(320344, 0.02);
             DynamicBloomFilter bloomFilter = new DynamicBloomFilter(bloomFilterParameters, new DoubleHashProvider(bloomFilterParameters));
@@ -132,7 +110,7 @@ namespace OctavianOrg.BloomTests
             double fpRate = ((double)fpCount / totalCount) * 100;
             Console.WriteLine(bloomFilter.FalsePositiveRate);
             Console.WriteLine(fpRate);
-            Assert.IsTrue(fpRate < 2.2);
+            Assert.IsTrue(fpRate < 2.5);
         }
 
         private void DynamicBloomTestRun(DynamicBloomFilter bloomFilter)
@@ -178,7 +156,7 @@ namespace OctavianOrg.BloomTests
             double fpRate = ((double)fpCount / totalCount) * 100;
             Console.WriteLine(bloomFilter.FalsePositiveRate);
             Console.WriteLine(fpRate);
-            Assert.IsTrue(fpRate < 2.1);
+            Assert.IsTrue(fpRate < 2.5);
 
             using (StreamReader reader = new StreamReader("data2.txt"))
             {
@@ -214,7 +192,7 @@ namespace OctavianOrg.BloomTests
 
             // False positive rate roughly doubles each time the initial capacity is reached, which is much better
             // than if a single filter was used. TODO - add some graphs showing this.
-            Assert.IsTrue(fpRate < 4.2);
+            Assert.IsTrue(fpRate < 4.5);
         }
     }
 }

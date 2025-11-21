@@ -96,7 +96,7 @@ namespace OctavianOrg.BloomTests
             BloomFilterParameters parameters = new BloomFilterParameters(1000, 0.01);
             
             // Act
-            ConcurrentBloomFilter filter = new ConcurrentBloomFilter(parameters, new BasicHashProvider(parameters), -1);
+            ConcurrentBloomFilter filter = new ConcurrentBloomFilter(parameters, new DoubleHashProvider(parameters), -1);
             
             // Assert
             Assert.AreEqual(Environment.ProcessorCount, filter.ConcurrencyLevel);
@@ -110,7 +110,7 @@ namespace OctavianOrg.BloomTests
             int customLevel = 16;
             
             // Act
-            ConcurrentBloomFilter filter = new ConcurrentBloomFilter(parameters, new BasicHashProvider(parameters), customLevel);
+            ConcurrentBloomFilter filter = new ConcurrentBloomFilter(parameters, new DoubleHashProvider(parameters), customLevel);
             
             // Assert
             Assert.AreEqual(customLevel, filter.ConcurrencyLevel);
@@ -124,7 +124,7 @@ namespace OctavianOrg.BloomTests
             BloomFilterParameters parameters = new BloomFilterParameters(1000, 0.01);
             
             // Act - Should throw ArgumentOutOfRangeException
-            ConcurrentBloomFilter filter = new ConcurrentBloomFilter(parameters, new BasicHashProvider(parameters), 0);
+            ConcurrentBloomFilter filter = new ConcurrentBloomFilter(parameters, new DoubleHashProvider(parameters), 0);
         }
         
         [TestMethod]
@@ -189,7 +189,7 @@ namespace OctavianOrg.BloomTests
         {
             // Arrange
             BloomFilterParameters parameters = new BloomFilterParameters(1000, 0.01);
-            ConcurrentBloomFilter filter = new ConcurrentBloomFilter(parameters, new BasicHashProvider(parameters), -1);
+            ConcurrentBloomFilter filter = new ConcurrentBloomFilter(parameters, new DoubleHashProvider(parameters), -1);
             int itemCount = 500;
             string[] uniqueItems = Enumerable.Range(0, itemCount).Select(i => $"Item_{i}").ToArray();
             

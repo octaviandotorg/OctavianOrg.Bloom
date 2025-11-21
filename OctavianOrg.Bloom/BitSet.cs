@@ -1,43 +1,40 @@
 ﻿namespace OctavianOrg.Bloom
 {
-    public class BitSet
+    /// <summary>
+    /// A bit set implementation for a fixed number of bits.
+    /// </summary>
+    public class BitSet : IBitSet
     {
-        private long[] _set;
+        protected long[] _set;
 
         public BitSet(long bitCount)
         {
-            BitCount = bitCount;
             long itemsNeeded = bitCount >> 6;
             _set = new long[itemsNeeded + 1];
         }
 
-        public long BitCount { get; private set; }
-
-        /// <summary>
-        /// Sets the specified bit and returns whether the bit was changed.
-        /// </summary>
-        /// <param name="index">The index of the bit to set.</param>
-        /// <returns>True if the bit was 0 then set to 1, false otherwise.</returns>
-        public bool Set(long index)
+        /// <inheritdoc/>
+        public bool Set(long bitNumber)
         {
-            long item = index >> 6;
-            int shift = (int)(index % 64);
+            long arrOffset = bitNumber >> 6;
+            int shift = (int)(bitNumber % 64);
             long setMask = 1L << shift;
 
-            if ((_set[item] & setMask) == 0)                          
+            if ((_set[arrOffset] & setMask) == 0)                          
             {
-                _set[item] |= setMask;
+                _set[arrOffset] |= setMask;
                 return true;
             }
             else
                 return false;
         }
 
-        public bool IsSet(long index)
+        /// <inheritdoc/>
+        public bool IsSet(long bitNumber)
         {
-            long item = index >> 6;
-            int shift = (int)(index % 64);
-            return (_set[item] & 1L << shift) != 0;
+            long arrOffset = bitNumber >> 6;
+            int shift = (int)(bitNumber % 64);
+            return (_set[arrOffset] & 1L << shift) != 0;
         }
     }
 }
